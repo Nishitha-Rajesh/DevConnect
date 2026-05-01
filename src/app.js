@@ -3,6 +3,22 @@ const app = express();
 /*app.use((req, res) => {
     res.send("hello from server");
 });*/
+// call for abc and ac works 
+app.get("/a{b}c", (req, res) => {
+    res.send("abc or ac");
+});
+// b+ is not supported in strings in Express 5, use a Regex instead
+app.get(/ab+c/, (req, res) => {
+    res.send("abc or abbbbc");
+});
+// (bc)? is replaced by {bc} in Express 5 strings
+app.get("/a{bc}d", (req, res) => {
+    res.send("abcd or ad");
+});
+// complex regex 
+app.get(/.*fly$/, (req, res) => {
+    res.send("start with * and end with fly ");
+});
 app.get("/user", (req, res) => {
     res.send({ firstname: "Nishitha" });
 });
