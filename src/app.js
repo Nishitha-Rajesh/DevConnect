@@ -1,43 +1,34 @@
 const express = require("express");
 const app = express();
-/*app.use((req, res) => {
-    res.send("hello from server");
-});*/
-// call for abc and ac works 
-app.get("/a{b}c", (req, res) => {
-    res.send("abc or ac");
+app.use("/admin", (req, res, next) => {
+    const token = "xyz";
+    const isAdminauthorized = token === "xyz";
+    console.log("authentication process");
+    if (!isAdminauthorized) {
+        res.status(401).send("unauthorized request");
+    }
+    else {
+        next();
+    }
 });
-// b+ is not supported in strings in Express 5, use a Regex instead
-app.get(/ab+c/, (req, res) => {
-    res.send("abc or abbbbc");
+app.get("/admin/getdata", (req, res) => {
+    res.send("admin added");
 });
-// (bc)? is replaced by {bc} in Express 5 strings
-app.get("/a{bc}d", (req, res) => {
-    res.send("abcd or ad");
+app.get("/admin/deldata", (req, res) => {
+    res.send("admin deleted");
 });
-// complex regex 
-app.get(/.*fly$/, (req, res) => {
-    res.send("start with * and end with fly ");
+app.use("/", (err, req, res, next) => {
+    if (err) {
+        console.log("Error occured");
+        res.status(401).send("unauthorized request");
+    }
+
 });
-app.get("/user", (req, res) => {
-    res.send({ firstname: "Nishitha" });
+app.use("/user", (req, res) => {
+    throw new Error("invalid user request");
 });
-app.post("/user", (req, res) => {
-    res.send("saved data to database succesfully");
-})
-app.use("/hello", (req, res) => {
-    res.send("hello hello  hello from server");
-});
-// use method will  all the http methods api call 
-app.use("/test", (req, res) => {
-    res.send("test test ");
-});
-app.use("/test/exam", (req, res) => {
-    res.send("test exam ");
-});
-app.use("/", (req, res) => {
-    res.send("any path ");
-});
+
+
 app.listen(7777, () => {
-    console.log("server is succesfully listening on port 7777");
+    console.log("Server running on port 7777");
 });
