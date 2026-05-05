@@ -1,34 +1,39 @@
 const express = require("express");
+const connect_db = require("./config/database");
 const app = express();
-app.use("/admin", (req, res, next) => {
-    const token = "xyz";
-    const isAdminauthorized = token === "xyz";
-    console.log("authentication process");
-    if (!isAdminauthorized) {
-        res.status(401).send("unauthorized request");
+const User = require("./Models/user");
+app.use(express.json());
+app.get("/user", async (req, res) => {
+    try {
+        const email = req.body.email;
+        console.log(email);
+        res.send("user data recieved succesfully");
     }
-    else {
-        next();
+    catch (err) {
+        res.status(400).send("Error recieving user data" + err.message);
     }
 });
-app.get("/admin/getdata", (req, res) => {
-    res.send("admin added");
-});
-app.get("/admin/deldata", (req, res) => {
-    res.send("admin deleted");
-});
-app.use("/", (err, req, res, next) => {
-    if (err) {
-        console.log("Error occured");
-        res.status(401).send("unauthorized request");
+app.post("/signup", async (req, res) => {
+    try {
+        const user = new User({
+            firstName: "Nishitha",
+            lastName: "Rajesh",
+            email: "nishitharajesh25@gmail.com",
+            password: "N@123",
+        });
+        await user.save();
+        res.send("User Added successfully");
+    } catch (err) {
+        res.status(400).send("Error saving the user: " + err.message);
     }
-
 });
-app.use("/user", (req, res) => {
-    throw new Error("invalid user request");
-});
-
-
-app.listen(7777, () => {
-    console.log("Server running on port 7777");
-});
+connect_db()
+    .then(() => {
+        console.log("Database connected succesfully");
+        app.listen(7777, () => {
+            console.log("Server running on port 7777");
+        });
+    })
+    .catch((err) => {
+        console.error("Error" + err.message);
+    });
