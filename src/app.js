@@ -26,7 +26,7 @@ app.get("/user", async (req, res) => {
     }
 });
 // find by id and delete 
-app.get("/user", async (req, res) => {
+app.delete("/user", async (req, res) => {
     try {
         const userid = req.body._id;
         const users = await User.findByIdAndDelete({ _id: userid });
@@ -37,7 +37,7 @@ app.get("/user", async (req, res) => {
     }
 });
 //find by id and update 
-app.get("/user", async (req, res) => {
+app.patch("/update", async (req, res) => {
     try {
         const userid = req.body._id;
         const users = await User.findByIdAndUpdate({ _id: userid }, {
@@ -51,18 +51,15 @@ app.get("/user", async (req, res) => {
 });
 app.post("/signup", async (req, res) => {
     try {
-        const user = new User({
-            firstName: "Rajesh",
-            lastName: "Krishnan",
-            email: "rajeshkrishnan25@gmail.com",
-            password: "R@123",
-        });
+        const data = req.body;
+        const user = new User(data);
         await user.save();
         res.send("User Added successfully");
     } catch (err) {
         res.status(400).send("Error saving the user: " + err.message);
     }
 });
+
 connect_db()
     .then(() => {
         console.log("Database connected succesfully");
