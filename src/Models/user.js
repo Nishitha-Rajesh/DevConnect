@@ -2,63 +2,100 @@ const mongoose = require("mongoose");
 const validator = require("validator");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
-const userschema = new mongoose.Schema({
+
+const userSchema = new mongoose.Schema(
+  {
     firstName: {
-        type: String,
-        required: true,
-        minlength: 2
+      type: String,
+      required: true,
+      minLength: 2,
+      maxLength: 50,
     },
     lastName: {
-        type: String,
-        minlength: 2
+      type: String,
     },
-    email: {
-        type: String,
-        lowercase: true,
-        required: true,
-        unique: true,
-        trim: true,
-        validate(values) {
-            if (!validator.isEmail(values)) {
-                throw new Error("invalid email");
-            }
+    emailId: {
+      type: String,
+      lowercase: true,
+      required: true,
+      unique: true,
+      trim: true,
+      validate(value) {
+        if (!validator.isEmail(value)) {
+          throw new Error("Invalid email address: " + value);
         }
+      },
     },
     password: {
-        type: String,
-        required: true,
-        minlength: 5,
-        unique: true,
-        validate(values) {
-            if (!validator.isStrongPassword(values)) {
-                throw new Error("Enter a Strong Password");
-            }
-        }
+      type: String,
+      required: true,
+    },
+    age: {
+      type: Number,
+      min: 18,
     },
     gender: {
-        type: String,
-        validate(values) {
-            if (!["Male", "Female", "Other"].includes(values)) {
-                throw new Error("Gender invalid");
-            }
-        }
+      type: String,
+      enum: {
+        values: ["male", "female", "other"],
+        message: `{VALUE} is not a valid gender type`,
+      },
     },
-    Skills: {
-        type: [String]
-    }
-});
-// should not use arror functions-it break things up 
-userschema.methods.getjwt = async function () {
-    const user = this;// refers to particular instance of user and this works differently  in arrow function
-    const token = await jwt.sign({ _id: user._id }, "aabb@#23", { expiresIn: "7d" });
-    return token;
-}
-userschema.methods.validatepassword = async function (passwordinput) {
-    const user = this;
-    const passwordhash = user.password;
-    const ispassword = await bcrypt.compare(passwordinput, passwordhash);
-    return ispassword;
-}
+    isPremium: {
+      type: Boolean,
+      default: false,
+    },
+    membershipType: {
+      type: String,
+    },
+    photoUrl: {
+      type: String,
+      default: "https://geographyandyou.com/images/user-profile.png",
+      validate(value) {
+        if (!validator.isURL(value)) {
+          throw new Error("Invalid Photo URL: " + value);
+        }
+      },
+    },
+    about: {
+      type: String,
+      default: "This is a default about of the user!",
+    },
+    skills: {
+      type: [String],
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
 
-const user = mongoose.model("user", userschema);
-module.exports = user;
+userSchema.methods.getJWT = async function () {
+  const user = this;
+  const token = await jwt.sign({ _id: user._id }, process.env.JWT_SECRET || "aabb@#23", {
+    expiresIn: "7d",
+  });
+  return token;
+};
+
+userSchema.methods.validatePassword = async function (passwordInputByUser) {
+  const user = this;
+  const passwordHash = user.password;
+  
+  if (passwordHash.startsWith("$2b$") || passwordHash.startsWith("$2a$")) {
+    const isPasswordValid = await bcrypt.compare(passwordInputByUser, passwordHash);
+    return isPasswordValid;
+  } else {
+    // If the password isn't hashed yet, compare plain text
+    const isPasswordValid = (passwordInputByUser === passwordHash);
+    
+    // Auto-upgrade the plain text password to a secure hash for future logins
+    if (isPasswordValid) {
+      user.password = await bcrypt.hash(passwordInputByUser, 10);
+      await user.save();
+    }
+    return isPasswordValid;
+  }
+};
+
+module.exports = mongoose.model("User", userSchema);
